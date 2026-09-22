@@ -223,7 +223,7 @@ function getInfluenceFactor(shape, rigidity, position, ratio) {
     return values[0];
 }
 
-// 폰트 크기가 조정된 SVG 생성 함수
+// 폰트 크기가 조정된 SVG 생성 함수 (검증 1용)
 function getGraphSVG() {
     const w = 450, h = 330;
     const padX = 55, padY = 30, padRight = 15, padBottom = 40;
@@ -301,6 +301,67 @@ function getGraphSVG() {
     // 상단 이미지 타이틀 폰트 조정
     svg += `<text x="${padX + chartW/2}" y="${padY - 12}" font-size="15" text-anchor="middle" font-weight="bold" fill="#333">해설 그림 4.3.7 탄성침하의 영향계수 I<tspan font-size="11" dy="2">s</tspan></text>`;
     
+    svg += `</svg>`;
+    return svg;
+}
+
+// 심도별 지중응력 영향계수 분포 그래프를 그려주는 함수 (검증 2용)
+function getSchmertmannGraphSVG(Iz0, Izp, zfp, zf0, layerResults) {
+    const w = 350, h = 450;
+    const padX = 65, padY = 70, padRight = 45, padBottom = 20;
+    const chartW = w - padX - padRight;
+    const chartH = h - padY - padBottom;
+
+    // Y축 (심도 Z) 동적 범위 설정 (0.5 단위로 올림)
+    const maxZ = Math.ceil(zf0 * 2) / 2 + 0.5;
+    // X축 (영향계수 Iz) 동적 범위 설정 (0.1 단위로 올림)
+    const maxIz = Math.ceil(Izp * 10) / 10 + 0.1;
+
+    const getX = (iz) => padX + (iz / maxIz) * chartW;
+    const getY = (z) => padY + (z / maxZ) * chartH;
+
+    let svg = `<svg viewBox="0 0 ${w} ${h}" style="width: 100%; max-height: 100%; display: block; font-family: sans-serif;">`;
+
+    // 상단 타이틀
+    svg += `<text x="${w/2}" y="25" font-size="15" text-anchor="middle" font-weight="bold" fill="#333">- 심도별 지중응력 영향계수 분포 -</text>`;
+    svg += `<text x="${padX + chartW/2}" y="48" font-size="13" text-anchor="middle" fill="#333">변형영향계수 (Iz)</text>`;
+
+    // Y축 타이틀
+    svg += `<text x="22" y="${padY + chartH/2}" font-size="13" text-anchor="middle" fill="#333" transform="rotate(-90, 22, ${padY + chartH/2})">기초바닥하부부터의 심도 (Z)</text>`;
+
+    // X축 (상단) 및 Y축 (좌측) 메인 선
+    svg += `<line x1="${padX}" y1="${padY}" x2="${padX + chartW}" y2="${padY}" stroke="#333" stroke-width="1.2"/>`;
+    svg += `<line x1="${padX}" y1="${padY}" x2="${padX}" y2="${padY + chartH}" stroke="#333" stroke-width="1.2"/>`;
+
+    // X축 눈금 및 라벨 (Iz)
+    for(let i=0; i<=maxIz; i+=0.1) {
+        let x = getX(i);
+        svg += `<line x1="${x}" y1="${padY}" x2="${x}" y2="${padY-4}" stroke="#333" stroke-width="1"/>`;
+        svg += `<text x="${x}" y="${padY-10}" font-size="12" text-anchor="middle" fill="#333">${i.toFixed(1)}</text>`;
+    }
+
+    // Y축 눈금 및 라벨 (Z)
+    for(let i=0; i<=maxZ; i+=0.5) {
+        let y = getY(i);
+        svg += `<line x1="${padX}" y1="${y}" x2="${padX-4}" y2="${y}" stroke="#333" stroke-width="1"/>`;
+        svg += `<text x="${padX-8}" y="${y+4}" font-size="12" text-anchor="end" fill="#333">${i.toFixed(1)}</text>`;
+    }
+
+    // Envelope Line (상부: Blue, 하부: SaddleBrown)
+    svg += `<line x1="${getX(Iz0)}" y1="${getY(0)}" x2="${getX(Izp)}" y2="${getY(zfp)}" stroke="blue" stroke-width="1.5"/>`;
+    svg += `<line x1="${getX(Izp)}" y1="${getY(zfp)}" x2="${getX(0)}" y2="${getY(zf0)}" stroke="saddlebrown" stroke-width="1.5"/>`;
+
+    // 지층별 중앙 영향계수 위치 붉은색 수평선 및 텍스트 표시
+    layerResults.forEach(l => {
+        if (l.z_mid <= zf0 && l.iz > 0) {
+            let y = getY(l.z_mid);
+            let x = getX(l.iz);
+            svg += `<line x1="${padX}" y1="${y}" x2="${x}" y2="${y}" stroke="red" stroke-width="1.2"/>`;
+            // 라벨 위치 살짝 띄우기
+            svg += `<text x="${x+6}" y="${y+4}" font-size="12" fill="#333">${l.iz.toFixed(3)}</text>`;
+        }
+    });
+
     svg += `</svg>`;
     return svg;
 }
@@ -706,45 +767,51 @@ function calculateSettlement() {
             • <strong>발생 침하량 S<sub>i</sub> : ${C1.toFixed(3)} &times; ${C2.toFixed(3)} &times; (${qb.toFixed(2)} - ${sigma_v0.toFixed(2)}) &times; ${sum_iz_e_dz.toExponential(4)} &times; 1000 = <span style="color:#8e44ad;">${Si_mm.toFixed(2)} mm</span></strong>
         </div>
 
-        <div class="section-title">■ Schmert&#8203;mann 지층별 영향계수 적분 상세 표 (최대 영향심도 Z<sub>f0</sub> = ${zf0.toFixed(2)} m)</div>
+        <div class="section-title">■ Schmert&#8203;mann 지층별 영향계수 적분 상세 표 및 분포 그래프 (최대 영향심도 Z<sub>f0</sub> = ${zf0.toFixed(2)} m)</div>
         
         <p style="font-size: 0.8em; color: #2980b9; margin-bottom: 5px;">※ Peak 지점($Z_{fp}$ = ${zfp.toFixed(2)}m)이 <strong>구간의 정확한 중앙 심도($Z_{mid}$)</strong>가 되도록 지층이 자동 분할되어 계산됩니다.</p>
         
-        <div class="table-container">
-            <table class="result-table" style="font-size: 0.78em; text-align: center;">
-                <thead>
-                    <tr style="background-color: #f5eef8;">
-                        <th>분석 지층 구간명</th>
-                        <th>두께 &Delta;z (m)</th>
-                        <th>중앙 심도 Z_mid (m)</th>
-                        <th>변형계수 E (kN/m²)</th>
-                        <th>중앙 영향계수 I<sub>z</sub></th>
-                        <th>${frac('I_z', 'E')} &times; &Delta;z</th>
-                        <th>비고</th>
-                    </tr>
-                </thead>
-                <tbody>
-                ${layer_results.map(l => `
-                    <tr style="${l.is_clipped ? 'background-color: #fdf2e9;' : (l.is_peak ? 'background-color: #eaf2f8; font-weight:bold;' : '')}">
-                        <td style="${l.is_peak ? 'color: #2980b9;' : ''}">${l.name}</td>
-                        <td style="${l.is_clipped ? 'font-weight:bold; color:#e67e22;' : ''}">${l.dz.toFixed(2)}</td>
-                        <td>${l.z_mid.toFixed(2)}</td>
-                        <td>${l.e_val.toLocaleString()}</td>
-                        <td>${l.iz.toFixed(3)}</td>
-                        <td>${l.val.toExponential(4)}</td>
-                        <td style="font-size: 0.8em; color: #7f8c8d; text-align:left;">
-                            ${l.is_clipped ? '한계심도 초과분 강제 절삭' : (l.is_peak ? 'Peak 위치가 Z_mid에 정확히 일치' : '-')}
-                        </td>
-                    </tr>
-                `).join('')}
-                </tbody>
-                <tfoot>
-                    <tr style="background-color: #eaeded; font-weight: bold;">
-                        <td colspan="5">적분 합계 (&sum;)</td>
-                        <td colspan="2" style="color: #8e44ad; text-align:left;">&nbsp;&nbsp;${sum_iz_e_dz.toExponential(4)}</td>
-                    </tr>
-                </tfoot>
-            </table>
+        <div style="display: grid; grid-template-columns: 1.5fr 1fr; gap: 15px; align-items: stretch;">
+            <div class="table-container" style="margin: 0;">
+                <table class="result-table" style="font-size: 0.78em; text-align: center; height: 100%; margin: 0;">
+                    <thead>
+                        <tr style="background-color: #f5eef8;">
+                            <th>분석 지층 구간명</th>
+                            <th>두께 &Delta;z (m)</th>
+                            <th>중앙 심도 Z_mid (m)</th>
+                            <th>변형계수 E (kN/m²)</th>
+                            <th>중앙 영향계수 I<sub>z</sub></th>
+                            <th>${frac('I_z', 'E')} &times; &Delta;z</th>
+                            <th>비고</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    ${layer_results.map(l => `
+                        <tr style="${l.is_clipped ? 'background-color: #fdf2e9;' : (l.is_peak ? 'background-color: #eaf2f8; font-weight:bold;' : '')}">
+                            <td style="${l.is_peak ? 'color: #2980b9;' : ''}">${l.name}</td>
+                            <td style="${l.is_clipped ? 'font-weight:bold; color:#e67e22;' : ''}">${l.dz.toFixed(2)}</td>
+                            <td>${l.z_mid.toFixed(2)}</td>
+                            <td>${l.e_val.toLocaleString()}</td>
+                            <td>${l.iz.toFixed(3)}</td>
+                            <td>${l.val.toExponential(4)}</td>
+                            <td style="font-size: 0.8em; color: #7f8c8d; text-align:left;">
+                                ${l.is_clipped ? '한계심도 초과분 강제 절삭' : (l.is_peak ? 'Peak 위치가 Z_mid에 정확히 일치' : '-')}
+                            </td>
+                        </tr>
+                    `).join('')}
+                    </tbody>
+                    <tfoot>
+                        <tr style="background-color: #eaeded; font-weight: bold;">
+                            <td colspan="5">적분 합계 (&sum;)</td>
+                            <td colspan="2" style="color: #8e44ad; text-align:left;">&nbsp;&nbsp;${sum_iz_e_dz.toExponential(4)}</td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+            
+            <div style="background: #fdfdfd; border: 1px solid #d5d8dc; border-radius: 4px; display: flex; justify-content: center; align-items: center; overflow: hidden; padding: 15px;">
+                ${getSchmertmannGraphSVG(Iz0, Izp, zfp, zf0, layer_results)}
+            </div>
         </div>
     `;
 }
