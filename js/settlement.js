@@ -223,6 +223,63 @@ function getInfluenceFactor(shape, rigidity, position, ratio) {
     return values[0];
 }
 
+// SVG를 직접 생성하는 헬퍼 함수 추가
+function getGraphSVG() {
+    const w = 450, h = 330;
+    const padX = 55, padY = 30, padRight = 15, padBottom = 40;
+    const chartW = w - padX - padRight;
+    const chartH = h - padY - padBottom;
+    
+    const getX = (val) => padX + ((val - 1) / 9) * chartW;
+    const getY = (val) => padY + chartH - ((val - 0.5) / 2.5) * chartH;
+    
+    let svg = `<svg viewBox="0 0 ${w} ${h}" style="width: 100%; height: 100%; display: block; font-family: sans-serif;">
+        <rect x="${padX}" y="${padY}" width="${chartW}" height="${chartH}" fill="#fff" stroke="#333" stroke-width="1"/>
+    `;
+    
+    // Grid Lines (X축 & Y축)
+    for(let i=1; i<=10; i++) {
+        svg += `<line x1="${getX(i)}" y1="${padY}" x2="${getX(i)}" y2="${padY+chartH}" stroke="#e0e0e0" stroke-width="1"/>`;
+        svg += `<text x="${getX(i)}" y="${padY+chartH+18}" font-size="11" text-anchor="middle" fill="#555">${i}</text>`;
+    }
+    for(let i=0.5; i<=3.0; i+=0.5) {
+        svg += `<line x1="${padX}" y1="${getY(i)}" x2="${padX+chartW}" y2="${getY(i)}" stroke="#e0e0e0" stroke-width="1"/>`;
+        svg += `<text x="${padX-8}" y="${getY(i)+4}" font-size="11" text-anchor="end" fill="#555">${i.toFixed(1)}</text>`;
+    }
+    
+    // 계산식에서 사용된 데이터 포인트(선형 보간)를 그대로 반영하여 직관성 확보
+    const d_center = `M${getX(1)},${getY(1.12)} L${getX(2)},${getY(1.53)} L${getX(5)},${getY(2.10)} L${getX(10)},${getY(2.56)}`;
+    const d_avg = `M${getX(1)},${getY(0.95)} L${getX(2)},${getY(1.30)} L${getX(5)},${getY(1.82)} L${getX(10)},${getY(2.24)}`;
+    const d_rigid = `M${getX(1)},${getY(0.88)} L${getX(2)},${getY(1.12)} L${getX(5)},${getY(1.60)} L${getX(10)},${getY(2.00)}`;
+    
+    svg += `<path d="${d_center}" fill="none" stroke="#2c3e50" stroke-width="1.5" />`;
+    svg += `<path d="${d_avg}" fill="none" stroke="#2c3e50" stroke-width="1.5" />`;
+    svg += `<path d="${d_rigid}" fill="none" stroke="#2c3e50" stroke-width="1.5" />`;
+    
+    // 곡선 라벨 위치 조정
+    svg += `<text x="${getX(4.3)}" y="${getY(2.17)}" font-size="11" fill="#2c3e50" font-weight="bold">I<tspan font-size="8" dy="2">s</tspan><tspan font-size="11" dy="-2">(중심)</tspan></text>`;
+    svg += `<text x="${getX(7.2)}" y="${getY(2.08)}" font-size="11" fill="#2c3e50" font-weight="bold">I<tspan font-size="8" dy="2">s</tspan><tspan font-size="11" dy="-2">(평균)</tspan></text>`;
+    svg += `<text x="${getX(6.5)}" y="${getY(1.68)}" font-size="11" fill="#2c3e50" font-weight="bold">I<tspan font-size="8" dy="2">s</tspan><tspan font-size="11" dy="-2">(강성)</tspan></text>`;
+    
+    // 축 타이틀 텍스트
+    svg += `<text x="${padX + chartW/2}" y="${h - 5}" font-size="12" text-anchor="middle" font-weight="bold" fill="#333">L/B</text>`;
+    svg += `<text x="18" y="${padY + chartH/2}" font-size="12" text-anchor="middle" font-weight="bold" fill="#333" transform="rotate(-90, 18, ${padY + chartH/2})">영향계수 I<tspan font-size="9" dy="3">s</tspan></text>`;
+    
+    // 원형기초 설명 박스 
+    const bx = getX(7.7), by = getY(1.4), bw = 75, bh = 65;
+    svg += `<rect x="${bx}" y="${by}" width="${bw}" height="${bh}" fill="#fff" stroke="#333" stroke-width="1"/>`;
+    svg += `<text x="${bx+5}" y="${by+15}" font-size="10" font-weight="bold" fill="#333">원형기초</text>`;
+    svg += `<text x="${bx+5}" y="${by+30}" font-size="10" fill="#333">I<tspan font-size="8" dy="2">s</tspan><tspan font-size="10" dy="-2">(중심)=1</tspan></text>`;
+    svg += `<text x="${bx+5}" y="${by+45}" font-size="10" fill="#333">I<tspan font-size="8" dy="2">s</tspan><tspan font-size="10" dy="-2">(평균)=0.85</tspan></text>`;
+    svg += `<text x="${bx+5}" y="${by+60}" font-size="10" fill="#333">I<tspan font-size="8" dy="2">s</tspan><tspan font-size="10" dy="-2">(강성)=0.79</tspan></text>`;
+    
+    // 상단 이미지 타이틀
+    svg += `<text x="${padX + chartW/2}" y="${padY - 12}" font-size="13" text-anchor="middle" font-weight="bold" fill="#333">해설 그림 4.3.7 탄성침하의 영향계수 I<tspan font-size="9" dy="2">s</tspan></text>`;
+    
+    svg += `</svg>`;
+    return svg;
+}
+
 function calculateSettlement() {
     const frac = (num, den) => `<span style="display:inline-flex; flex-direction:column; vertical-align:middle; text-align:center; margin:0 4px;"><span style="border-bottom:1px solid #2c3e50; padding:1px 4px;">${num}</span><span style="padding:1px 4px;">${den}</span></span>`;
 
@@ -593,9 +650,10 @@ function calculateSettlement() {
                     </tbody>
                 </table>
             </div>
-            <div style="background: #fff; border: 1px solid #d5d8dc; border-radius: 4px; display: flex; flex-direction: column; justify-content: center; align-items: center; overflow: hidden; padding: 0;">
-                <img src="images/is_graph.png" alt="탄성침하 영향계수 그래프" style="width: 100%; height: 100%; object-fit: contain; border-radius: 2px;" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
-                <div style="display: none; padding: 20px; font-size: 0.8em; color: #7f8c8d; border: 1px dashed #bdc3c7; width: 100%; text-align: center;">[이미지 경로: images/is_graph.png 필요]</div>
+            
+            <!-- IMG 태그 대신 SVG를 직접 렌더링하도록 교체된 구역 -->
+            <div style="background: #fdfdfd; border: 1px solid #d5d8dc; border-radius: 4px; display: flex; flex-direction: column; justify-content: center; align-items: center; overflow: hidden; padding: 15px;">
+                ${getGraphSVG()}
             </div>
         </div>
 
@@ -613,10 +671,10 @@ function calculateSettlement() {
             • 최대 영향계수 발생심도 (Z<sub>fp</sub>) : <strong>${zfp.toFixed(2)} m</strong> [적용식: B &times; (0.5 + 0.0555 &times; (${sch_ratio.toFixed(2)} - 1)) = ${B.toFixed(2)} &times; ${zfp_ratio.toFixed(3)}]<br>
             • 기초바닥 영향계수 (I<sub>z0</sub>) : <strong>${Iz0.toFixed(3)}</strong> [적용식: 0.1 + 0.0111 &times; (${sch_ratio.toFixed(2)} - 1)]<br>
             • Z<sub>fp</sub> 위치의 유효응력 (&sigma;<sub>vp</sub>') : <strong>${sigma_vp_prime.toFixed(2)} kN/m²</strong><br>
-            • <strong>최대 영향계수 (I<sub>zp</sub>)</strong> : <strong>${Izp.toFixed(3)}</strong> [적용식: 0.5 + 0.1 &times; &radic;${frac(`${qb.toFixed(2)} - ${sigma_v0.toFixed(2)}`, sigma_vp_prime.toFixed(2))}]<br><br>
+            • <strong>최대 영향계수 (I<sub>zp</sub>)</strong> : <strong>${Izp.toFixed(3)}</strong> [적용식: 0.5 + 0.1 &times; &radic;${frac(`${qb.toFixed(2)} -${sigma_v0.toFixed(2)}`, sigma_vp_prime.toFixed(2))}]<br><br>
             
             <strong>2. 보정계수 산정</strong><br>
-            • 근입깊이 보정계수 C<sub>1</sub> : <strong>${C1.toFixed(3)}</strong> [적용식: max(0.5, 1 - 0.5 &times; ${frac(sigma_v0.toFixed(2), `${qb.toFixed(2)} - ${sigma_v0.toFixed(2)}`)})]<br>
+            • 근입깊이 보정계수 C<sub>1</sub> : <strong>${C1.toFixed(3)}</strong> [적용식: max(0.5, 1 - 0.5 &times; ${frac(sigma_v0.toFixed(2), `${qb.toFixed(2)} -${sigma_v0.toFixed(2)}`)})]<br>
             • Creep 보정계수 C<sub>2</sub> : <strong>${C2.toFixed(3)}</strong> [적용식: 1 + 0.2 &times; log<sub>10</sub>(${frac(t_years.toFixed(1), '0.1')})]<br><br>
 
             <strong>3. 최종 침하량 산정</strong><br>
