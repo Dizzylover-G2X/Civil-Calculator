@@ -223,7 +223,7 @@ function getInfluenceFactor(shape, rigidity, position, ratio) {
     return values[0];
 }
 
-// 부드러운 곡선 적용된 SVG 생성 함수
+// 폰트 크기가 조정된 SVG 생성 함수
 function getGraphSVG() {
     const w = 450, h = 330;
     const padX = 55, padY = 30, padRight = 15, padBottom = 40;
@@ -240,11 +240,11 @@ function getGraphSVG() {
     // Grid Lines (X축 & Y축)
     for(let i=1; i<=10; i++) {
         svg += `<line x1="${getX(i)}" y1="${padY}" x2="${getX(i)}" y2="${padY+chartH}" stroke="#e0e0e0" stroke-width="1"/>`;
-        svg += `<text x="${getX(i)}" y="${padY+chartH+18}" font-size="11" text-anchor="middle" fill="#555">${i}</text>`;
+        svg += `<text x="${getX(i)}" y="${padY+chartH+20}" font-size="13" text-anchor="middle" fill="#555">${i}</text>`;
     }
     for(let i=0.5; i<=3.0; i+=0.5) {
         svg += `<line x1="${padX}" y1="${getY(i)}" x2="${padX+chartW}" y2="${getY(i)}" stroke="#e0e0e0" stroke-width="1"/>`;
-        svg += `<text x="${padX-8}" y="${getY(i)+4}" font-size="11" text-anchor="end" fill="#555">${i.toFixed(1)}</text>`;
+        svg += `<text x="${padX-8}" y="${getY(i)+4}" font-size="13" text-anchor="end" fill="#555">${i.toFixed(1)}</text>`;
     }
     
     // Catmull-Rom Spline을 Bezier 곡선으로 변환하여 부드럽게 그려주는 헬퍼 함수
@@ -281,25 +281,25 @@ function getGraphSVG() {
     svg += `<path d="${d_avg}" fill="none" stroke="#2c3e50" stroke-width="1.5" />`;
     svg += `<path d="${d_rigid}" fill="none" stroke="#2c3e50" stroke-width="1.5" />`;
     
-    // 곡선 라벨 위치 조정
-    svg += `<text x="${getX(4.3)}" y="${getY(2.17)}" font-size="11" fill="#2c3e50" font-weight="bold">I<tspan font-size="8" dy="2">s</tspan><tspan font-size="11" dy="-2">(중심)</tspan></text>`;
-    svg += `<text x="${getX(7.2)}" y="${getY(2.08)}" font-size="11" fill="#2c3e50" font-weight="bold">I<tspan font-size="8" dy="2">s</tspan><tspan font-size="11" dy="-2">(평균)</tspan></text>`;
-    svg += `<text x="${getX(6.5)}" y="${getY(1.68)}" font-size="11" fill="#2c3e50" font-weight="bold">I<tspan font-size="8" dy="2">s</tspan><tspan font-size="11" dy="-2">(강성)</tspan></text>`;
+    // 곡선 라벨 위치 및 폰트 크기 조정
+    svg += `<text x="${getX(4.3)}" y="${getY(2.17)}" font-size="14" fill="#2c3e50" font-weight="bold">I<tspan font-size="10" dy="2">s</tspan><tspan font-size="14" dy="-2">(중심)</tspan></text>`;
+    svg += `<text x="${getX(7.2)}" y="${getY(2.08)}" font-size="14" fill="#2c3e50" font-weight="bold">I<tspan font-size="10" dy="2">s</tspan><tspan font-size="14" dy="-2">(평균)</tspan></text>`;
+    svg += `<text x="${getX(6.5)}" y="${getY(1.68)}" font-size="14" fill="#2c3e50" font-weight="bold">I<tspan font-size="10" dy="2">s</tspan><tspan font-size="14" dy="-2">(강성)</tspan></text>`;
     
-    // 축 타이틀 텍스트
-    svg += `<text x="${padX + chartW/2}" y="${h - 5}" font-size="12" text-anchor="middle" font-weight="bold" fill="#333">L/B</text>`;
-    svg += `<text x="18" y="${padY + chartH/2}" font-size="12" text-anchor="middle" font-weight="bold" fill="#333" transform="rotate(-90, 18, ${padY + chartH/2})">영향계수 I<tspan font-size="9" dy="3">s</tspan></text>`;
+    // 축 타이틀 텍스트 폰트 조정
+    svg += `<text x="${padX + chartW/2}" y="${h - 5}" font-size="14" text-anchor="middle" font-weight="bold" fill="#333">L/B</text>`;
+    svg += `<text x="18" y="${padY + chartH/2}" font-size="14" text-anchor="middle" font-weight="bold" fill="#333" transform="rotate(-90, 18, ${padY + chartH/2})">영향계수 I<tspan font-size="11" dy="3">s</tspan></text>`;
     
-    // 원형기초 설명 박스 
-    const bx = getX(7.7), by = getY(1.4), bw = 75, bh = 65;
+    // 원형기초 설명 박스 (폰트 크기에 맞춰 박스 넓이/높이 및 행간격 상향 조정)
+    const bx = getX(7.5), by = getY(1.4), bw = 85, bh = 76;
     svg += `<rect x="${bx}" y="${by}" width="${bw}" height="${bh}" fill="#fff" stroke="#333" stroke-width="1"/>`;
-    svg += `<text x="${bx+5}" y="${by+15}" font-size="10" font-weight="bold" fill="#333">원형기초</text>`;
-    svg += `<text x="${bx+5}" y="${by+30}" font-size="10" fill="#333">I<tspan font-size="8" dy="2">s</tspan><tspan font-size="10" dy="-2">(중심)=1</tspan></text>`;
-    svg += `<text x="${bx+5}" y="${by+45}" font-size="10" fill="#333">I<tspan font-size="8" dy="2">s</tspan><tspan font-size="10" dy="-2">(평균)=0.85</tspan></text>`;
-    svg += `<text x="${bx+5}" y="${by+60}" font-size="10" fill="#333">I<tspan font-size="8" dy="2">s</tspan><tspan font-size="10" dy="-2">(강성)=0.79</tspan></text>`;
+    svg += `<text x="${bx+5}" y="${by+18}" font-size="12" font-weight="bold" fill="#333">원형기초</text>`;
+    svg += `<text x="${bx+5}" y="${by+36}" font-size="12" fill="#333">I<tspan font-size="10" dy="2">s</tspan><tspan font-size="12" dy="-2">(중심)=1</tspan></text>`;
+    svg += `<text x="${bx+5}" y="${by+54}" font-size="12" fill="#333">I<tspan font-size="10" dy="2">s</tspan><tspan font-size="12" dy="-2">(평균)=0.85</tspan></text>`;
+    svg += `<text x="${bx+5}" y="${by+72}" font-size="12" fill="#333">I<tspan font-size="10" dy="2">s</tspan><tspan font-size="12" dy="-2">(강성)=0.79</tspan></text>`;
     
-    // 상단 이미지 타이틀
-    svg += `<text x="${padX + chartW/2}" y="${padY - 12}" font-size="13" text-anchor="middle" font-weight="bold" fill="#333">해설 그림 4.3.7 탄성침하의 영향계수 I<tspan font-size="9" dy="2">s</tspan></text>`;
+    // 상단 이미지 타이틀 폰트 조정
+    svg += `<text x="${padX + chartW/2}" y="${padY - 12}" font-size="15" text-anchor="middle" font-weight="bold" fill="#333">해설 그림 4.3.7 탄성침하의 영향계수 I<tspan font-size="11" dy="2">s</tspan></text>`;
     
     svg += `</svg>`;
     return svg;
@@ -613,7 +613,6 @@ function calculateSettlement() {
         <div class="section-title">■ 탄성&#8203;침하의 영향&#8203;계수 Is (구조물&#8203;기초설계기준 해설 표 4.3.2 및 그림 4.3.7)</div>
         <div style="display: grid; grid-template-columns: 1.6fr 1fr; gap: 15px; align-items: stretch; margin-top: 8px; margin-bottom: 25px;">
             <div class="table-container" style="margin: 0;">
-                <!-- 폰트 크기 조절 (0.75em -> 0.85em) 반영 -->
                 <table class="result-table" style="font-size: 0.85em; text-align: center; width: 100%; table-layout: fixed; height: 100%; margin: 0;">
                     <thead>
                         <tr style="background-color: #eaeded;">
@@ -637,7 +636,6 @@ function calculateSettlement() {
                             <td style="padding: 10px 2px; vertical-align: middle;">0.64</td>
                             <td style="padding: 10px 2px; vertical-align: middle;">-</td>
                             <td style="padding: 10px 2px; vertical-align: middle;">0.85</td>
-                            <!-- 비고란 폰트 크기 조절 (0.75em -> 0.85em) 반영 -->
                             <td rowspan="5" style="text-align:left; padding:4px 6px; font-size:0.85em; word-break: keep-all; vertical-align: middle; line-height: 1.3;">
                                 연성&#8203;기초 중심&#8203;점 영향치는 모서리&#8203;점의 2배임. 즉, 중심&#8203;점 침하는 모서리&#8203;점 침하의 2배임.
                             </td>
@@ -678,7 +676,6 @@ function calculateSettlement() {
                 </table>
             </div>
             
-            <!-- IMG 태그 대신 부드러운 곡선(Bezier Curve)이 적용된 SVG를 직접 렌더링 -->
             <div style="background: #fdfdfd; border: 1px solid #d5d8dc; border-radius: 4px; display: flex; flex-direction: column; justify-content: center; align-items: center; overflow: hidden; padding: 15px;">
                 ${getGraphSVG()}
             </div>
