@@ -223,7 +223,7 @@ function getInfluenceFactor(shape, rigidity, position, ratio) {
     return values[0];
 }
 
-// SVG를 직접 생성하는 헬퍼 함수 추가
+// 부드러운 곡선 적용된 SVG 생성 함수
 function getGraphSVG() {
     const w = 450, h = 330;
     const padX = 55, padY = 30, padRight = 15, padBottom = 40;
@@ -247,10 +247,35 @@ function getGraphSVG() {
         svg += `<text x="${padX-8}" y="${getY(i)+4}" font-size="11" text-anchor="end" fill="#555">${i.toFixed(1)}</text>`;
     }
     
-    // 계산식에서 사용된 데이터 포인트(선형 보간)를 그대로 반영하여 직관성 확보
-    const d_center = `M${getX(1)},${getY(1.12)} L${getX(2)},${getY(1.53)} L${getX(5)},${getY(2.10)} L${getX(10)},${getY(2.56)}`;
-    const d_avg = `M${getX(1)},${getY(0.95)} L${getX(2)},${getY(1.30)} L${getX(5)},${getY(1.82)} L${getX(10)},${getY(2.24)}`;
-    const d_rigid = `M${getX(1)},${getY(0.88)} L${getX(2)},${getY(1.12)} L${getX(5)},${getY(1.60)} L${getX(10)},${getY(2.00)}`;
+    // Catmull-Rom Spline을 Bezier 곡선으로 변환하여 부드럽게 그려주는 헬퍼 함수
+    const getSmoothPath = (points) => {
+        let d = `M${points[0].x},${points[0].y}`;
+        for (let i = 0; i < points.length - 1; i++) {
+            const p0 = i === 0 ? points[0] : points[i - 1];
+            const p1 = points[i];
+            const p2 = points[i + 1];
+            const p3 = i + 2 < points.length ? points[i + 2] : p2;
+            
+            // 곡선 텐션 (Tension) 조절: 0.15~0.2 정도가 완만하고 자연스럽습니다.
+            const cp1x = p1.x + (p2.x - p0.x) * 0.18;
+            const cp1y = p1.y + (p2.y - p0.y) * 0.18;
+            const cp2x = p2.x - (p3.x - p1.x) * 0.18;
+            const cp2y = p2.y - (p3.y - p1.y) * 0.18;
+            
+            d += ` C${cp1x},${cp1y} ${cp2x},${cp2y} ${p2.x},${p2.y}`;
+        }
+        return d;
+    };
+
+    // 산정식에 사용되는 좌표들
+    const ptsCenter = [{x: getX(1), y: getY(1.12)}, {x: getX(2), y: getY(1.53)}, {x: getX(5), y: getY(2.10)}, {x: getX(10), y: getY(2.56)}];
+    const ptsAvg = [{x: getX(1), y: getY(0.95)}, {x: getX(2), y: getY(1.30)}, {x: getX(5), y: getY(1.82)}, {x: getX(10), y: getY(2.24)}];
+    const ptsRigid = [{x: getX(1), y: getY(0.88)}, {x: getX(2), y: getY(1.12)}, {x: getX(5), y: getY(1.60)}, {x: getX(10), y: getY(2.00)}];
+    
+    // 부드러운 곡선 패스 생성
+    const d_center = getSmoothPath(ptsCenter);
+    const d_avg = getSmoothPath(ptsAvg);
+    const d_rigid = getSmoothPath(ptsRigid);
     
     svg += `<path d="${d_center}" fill="none" stroke="#2c3e50" stroke-width="1.5" />`;
     svg += `<path d="${d_avg}" fill="none" stroke="#2c3e50" stroke-width="1.5" />`;
@@ -588,7 +613,8 @@ function calculateSettlement() {
         <div class="section-title">■ 탄성&#8203;침하의 영향&#8203;계수 Is (구조물&#8203;기초설계기준 해설 표 4.3.2 및 그림 4.3.7)</div>
         <div style="display: grid; grid-template-columns: 1.6fr 1fr; gap: 15px; align-items: stretch; margin-top: 8px; margin-bottom: 25px;">
             <div class="table-container" style="margin: 0;">
-                <table class="result-table" style="font-size: 0.75em; text-align: center; width: 100%; table-layout: fixed; height: 100%; margin: 0;">
+                <!-- 폰트 크기 조절 (0.75em -> 0.85em) 반영 -->
+                <table class="result-table" style="font-size: 0.85em; text-align: center; width: 100%; table-layout: fixed; height: 100%; margin: 0;">
                     <thead>
                         <tr style="background-color: #eaeded;">
                             <th rowspan="2" style="padding:10px 2px; width: 22%; vertical-align: middle; white-space: nowrap;">영향&#8203;계수 Is</th>
@@ -597,10 +623,10 @@ function calculateSettlement() {
                             <th rowspan="2" style="padding:10px 2px; width: 24%; vertical-align: middle;">비고</th>
                         </tr>
                         <tr style="background-color: #eaeded;">
-                            <th style="padding:6px 1px; vertical-align: middle; font-size: 0.9em; white-space: nowrap;">중심&#8203;점</th>
-                            <th style="padding:6px 1px; vertical-align: middle; font-size: 0.9em; white-space: nowrap;">외변&#8203;중점</th>
-                            <th style="padding:6px 1px; vertical-align: middle; font-size: 0.9em; white-space: nowrap;">모서리</th>
-                            <th style="padding:6px 1px; vertical-align: middle; font-size: 0.9em; white-space: nowrap;">평균</th>
+                            <th style="padding:6px 1px; vertical-align: middle; font-size: 0.95em; white-space: nowrap;">중심&#8203;점</th>
+                            <th style="padding:6px 1px; vertical-align: middle; font-size: 0.95em; white-space: nowrap;">외변&#8203;중점</th>
+                            <th style="padding:6px 1px; vertical-align: middle; font-size: 0.95em; white-space: nowrap;">모서리</th>
+                            <th style="padding:6px 1px; vertical-align: middle; font-size: 0.95em; white-space: nowrap;">평균</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -611,7 +637,8 @@ function calculateSettlement() {
                             <td style="padding: 10px 2px; vertical-align: middle;">0.64</td>
                             <td style="padding: 10px 2px; vertical-align: middle;">-</td>
                             <td style="padding: 10px 2px; vertical-align: middle;">0.85</td>
-                            <td rowspan="5" style="text-align:left; padding:4px 6px; font-size:0.75em; word-break: keep-all; vertical-align: middle; line-height: 1.3;">
+                            <!-- 비고란 폰트 크기 조절 (0.75em -> 0.85em) 반영 -->
+                            <td rowspan="5" style="text-align:left; padding:4px 6px; font-size:0.85em; word-break: keep-all; vertical-align: middle; line-height: 1.3;">
                                 연성&#8203;기초 중심&#8203;점 영향치는 모서리&#8203;점의 2배임. 즉, 중심&#8203;점 침하는 모서리&#8203;점 침하의 2배임.
                             </td>
                         </tr>
@@ -651,7 +678,7 @@ function calculateSettlement() {
                 </table>
             </div>
             
-            <!-- IMG 태그 대신 SVG를 직접 렌더링하도록 교체된 구역 -->
+            <!-- IMG 태그 대신 부드러운 곡선(Bezier Curve)이 적용된 SVG를 직접 렌더링 -->
             <div style="background: #fdfdfd; border: 1px solid #d5d8dc; border-radius: 4px; display: flex; flex-direction: column; justify-content: center; align-items: center; overflow: hidden; padding: 15px;">
                 ${getGraphSVG()}
             </div>
